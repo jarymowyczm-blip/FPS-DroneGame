@@ -1,10 +1,10 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js';
-import { FlightController } from './movement.js';
-import { EffectsSystem } from './effects.js';
-import { CombatSystem } from './combat.js';
-import { createArena, createDrone, disposeDrone, DRONE_TYPES } from './arena.js';
-import { GameUI } from './ui.js';
-import { AudioSystem } from './audio.js';
+import { FlightController } from './movement.js?v=afterburn-05';
+import { EffectsSystem } from './effects.js?v=afterburn-05';
+import { CombatSystem } from './combat.js?v=afterburn-05';
+import { createArena, createDrone, disposeDrone, DRONE_TYPES } from './arena.js?v=afterburn-05';
+import { GameUI } from './ui.js?v=afterburn-05';
+import { AudioSystem } from './audio.js?v=afterburn-05';
 
 const $ = (selector) => document.querySelector(selector);
 const canvas = $('#world');
@@ -58,10 +58,12 @@ const game = {
   kills: 0,
   screenShake: 0,
 };
-const player = createDrone(0, 'blue');  player.position.set(0, 5, 0);
-  scene.add(player);
-  effects.addEngine(player);
+const player = createDrone(0, 'blue');
+player.position.set(0, 5, 0);
+scene.add(player);
+effects.addEngine(player);
 const flight = new FlightController(camera, player, game);
+const playerMuzzlePositions = player.userData.weaponMuzzles.map(() => new THREE.Vector3());
 const bots = [];
 const roster = [];
 const clock = new THREE.Clock();
@@ -109,6 +111,22 @@ const combat = new CombatSystem(scene, camera, effects, (event, bot, target) => 
   if (event === 'destroyed') endMatch(false);
 });
 
+function clearHeldInputs() {
+  game.keys = Object.create(null);
+  game.mouseDown = false;
+  game.rightMouse = false;
+  game.boosting = false;
+  game.focus = false;
+  combat.focusOn(false);
+  flight.focus = false;
+}
+
+function muzzleWorldPositions() {
+  player.updateMatrixWorld(true);
+  player.userData.weaponMuzzles.forEach((muzzle, index) => muzzle.getWorldPosition(playerMuzzlePositions[index]));
+  return playerMuzzlePositions;
+}
+
 function rosterReset() {
   roster.splice(0, roster.length,
     { name: 'YOU', score: 0, you: true },
@@ -128,8 +146,7 @@ function resetMatch() {
   game.damageFlash = 0;
   game.kills = 0;
   game.screenShake = 0;
-  game.rightMouse = false;
-  game.mouseDown = false;
+  clearHeldInputs();
   game.thirdPerson = false;
   flight.thirdPerson = false;
   flight.focus = false;
@@ -139,9 +156,9 @@ function resetMatch() {
 
 function startMatch() {
   audio.init();
+  clearHeldInputs();
   game.mode = 'countdown';
   player.visible = true;
-  game.keys = Object.create(null);
   $('#countdownNumber').textContent = '3';
   resetMatch();
   ui.showMatch();
@@ -154,20 +171,23 @@ function endMatch(won) {
   game.mode = 'end';
   game.paused = false;
   ui.clock(0);
-  game.mouseDown = false;
+  clearHeldInputs();
   player.visible = false;
   document.exitPointerLock?.();
   ui.end(won, roster);
 }
 function togglePause() {
-  if (game.mode === 'countdown') { game.mode = 'pause'; ui.pause(); }
-  else if (game.mode === 'match') {
+  if (game.mode === 'countdown') {
+    clearHeldInputs();
     game.mode = 'pause';
-    game.mouseDown = false;
-    game.rightMouse = false;
+    ui.pause();
+  } else if (game.mode === 'match') {
+    clearHeldInputs();
+    game.mode = 'pause';
     document.exitPointerLock?.();
     ui.pause();
   } else if (game.mode === 'pause') {
+    clearHeldInputs();
     game.mode = 'match';
     ui.resume();
     player.visible = true;
@@ -241,7 +261,9 @@ function update(dt, time) {
   audio.boost(game.boosting);
   audio.flight(motion.coastSpeed, game.boosting);
 
-  if (game.mouseDown && !game.boosting) combat.shoot(camera.position.clone(), aimDirection(), game.focus);
+  if (game.mouseDown && !game.boosting && combat.shoot(camera.position.clone(), aimDirection(), game.focus, muzzleWorldPositions())) {
+    game.screenShake = Math.max(game.screenShake, 0.025);
+  }
   combat.focusOn(game.focus);
   game.drone = player;
   combat.update(dt, game);
@@ -289,10 +311,23 @@ function frame(time) {
 }
 
 ui.onPlay = startMatch;
-ui.onResume = togglePause;  ui.onAbort = () => { game.mode = 'menu'; game.mouseDown = false; player.visible = true; ui.showMenu(); document.exitPointerLock?.(); };
+ui.onResume = togglePause;
+ui.onAbort = () => {
+  clearHeldInputs();
+  game.mode = 'menu';
+  player.visible = true;
+  ui.showMenu();
+  document.exitPointerLock?.();
+};
 ui.onCamera = switchCamera;
 ui.onRestart = startMatch;
-$('#quitButton').onclick = () => { game.mode = 'menu'; player.visible = true; ui.showMenu(); document.exitPointerLock?.(); };
+$('#quitButton').onclick = () => {
+  clearHeldInputs();
+  game.mode = 'menu';
+  player.visible = true;
+  ui.showMenu();
+  document.exitPointerLock?.();
+};
 
 window.addEventListener('resize', () => {
   camera.aspect = innerWidth / innerHeight;
@@ -302,9 +337,11 @@ window.addEventListener('resize', () => {
 });
 window.addEventListener('keydown', (event) => {
   game.keys[event.code] = true;
-  if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.code)) event.preventDefault();    if (event.code === 'Escape') togglePause();
-    if (event.code === 'KeyV' && game.mode === 'match') switchCamera();
-    if (event.code === 'KeyR' && game.mode === 'match') combat.reloadWeapon();
+  if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.code)) event.preventDefault();
+  if (event.repeat) return;
+  if (event.code === 'Escape') togglePause();
+  if (event.code === 'KeyV' && game.mode === 'match') switchCamera();
+  if (event.code === 'KeyR' && game.mode === 'match') combat.reloadWeapon();
   if (event.code === 'Enter' && game.mode === 'menu') startMatch();
 });
 window.addEventListener('keyup', (event) => { game.keys[event.code] = false; });
@@ -312,22 +349,64 @@ canvas.addEventListener('click', () => {
   if (game.mode === 'match' && innerWidth > 720) canvas.requestPointerLock?.();
 });
 window.addEventListener('mousedown', (event) => {
-  if (game.mode !== 'match') return;
-  if (event.button === 0) { game.mouseDown = true; if (innerWidth > 720) canvas.requestPointerLock?.(); }
-  if (event.button === 2) { game.rightMouse = true; combat.focusOn(true); }
+  if (game.mode !== 'match' || (event.target !== canvas && document.pointerLockElement !== canvas)) return;
+  if (event.button === 0) {
+    game.mouseDown = true;
+    if (innerWidth > 720) canvas.requestPointerLock?.();
+  }
+  if (event.button === 2) {
+    game.rightMouse = true;
+    combat.focusOn(true);
+  }
 });
+canvas.addEventListener('pointerdown', (event) => {
+  if (game.mode !== 'match' || event.button !== 0 || innerWidth > 720) return;
+  game.mouseDown = true;
+  try { canvas.setPointerCapture?.(event.pointerId); } catch { /* Browser may already have captured the pointer. */ }
+});
+canvas.addEventListener('lostpointercapture', clearHeldInputs);
 window.addEventListener('mouseup', (event) => {
   if (event.button === 0) game.mouseDown = false;
-  if (event.button === 2) { game.rightMouse = false; combat.focusOn(false); }
+  if (event.button === 2) {
+    game.rightMouse = false;
+    combat.focusOn(false);
+  }
 });
+window.addEventListener('auxclick', (event) => {
+  if (event.button === 2) {
+    game.rightMouse = false;
+    combat.focusOn(false);
+  }
+});
+window.addEventListener('pointerup', (event) => {
+  if (event.button === 0) game.mouseDown = false;
+  if (event.button === 2) {
+    game.rightMouse = false;
+    combat.focusOn(false);
+  }
+});
+window.addEventListener('pointercancel', clearHeldInputs);
+document.addEventListener('pointerlockchange', () => {
+  if (document.pointerLockElement !== canvas) clearHeldInputs();
+});
+document.addEventListener('pointerlockerror', clearHeldInputs);
 window.addEventListener('mousemove', (event) => {
-  if (game.mode === 'match' && document.pointerLockElement === canvas) flight.look(event.movementX, event.movementY, game.rightMouse ? 0.00115 : 0.0021);
+  if (game.mode === 'match' && game.mouseDown && Number.isInteger(event.buttons) && !(event.buttons & 1)) {
+    game.mouseDown = false;
+  }
+  if (game.mode === 'match' && document.pointerLockElement === canvas) {
+    flight.look(event.movementX, event.movementY, game.rightMouse ? 0.00135 : 0.00235);
+  }
 });
 window.addEventListener('contextmenu', (event) => event.preventDefault());
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    if (game.mode === 'match') togglePause();
+    else clearHeldInputs();
+  }
+});
 window.addEventListener('blur', () => {
   if (game.mode === 'match') togglePause();
-  game.keys = Object.create(null);
-  game.mouseDown = false;
-  game.rightMouse = false;
+  else clearHeldInputs();
 });
 requestAnimationFrame(frame);

@@ -48,7 +48,48 @@ export function createDrone(kind=0,team='red'){
   const add=(g,m,p,s)=>addMesh(group,g,m,p,s),rotors=[],weaponMuzzles=[];
   add(new THREE.CylinderGeometry(.42,.5,.2,12),dark,[0,0,0],[1,1,.72]);
   const core=add(new THREE.SphereGeometry(.56,24,16),armor,[0,.04,0],[1.25,.48,.88]);
+  // A tapered armored nose and layered dorsal plates give every frame a more
+  // deliberate aircraft silhouette than the old floating-pod body.
+  const nose=add(new THREE.ConeGeometry(.39,1.48,8),armor,[0,.025,-.47]);nose.rotation.x=-Math.PI/2;
+  add(new THREE.BoxGeometry(.18,.075,1.04),trim,[0,.29,-.02]);
+  add(new THREE.BoxGeometry(.045,.022,.47),black,[0,.335,-.49]);
   add(new THREE.BoxGeometry(.55,.14,.7),dark,[0,-.13,.08]);
+  for(const side of [-1,1]){
+    const armorPanel=add(new THREE.BoxGeometry(.38,.075,.64),armor,[side*.54,.12,-.06]);armorPanel.rotation.y=side*.13;
+    const panelSeam=add(new THREE.BoxGeometry(.045,.018,.47),trim,[side*.55,.164,-.08]);panelSeam.rotation.y=side*.13;
+    const intake=add(new THREE.BoxGeometry(.2,.035,.17),black,[side*.48,-.02,.45]);intake.rotation.y=side*.08;
+  }
+  if(spec.shape==='wing'||spec.shape==='dart'){
+    for(const side of [-1,1]){
+      const scale=spec.shape==='wing'?1:.76;
+      const sweep=new THREE.Shape();
+      sweep.moveTo(side*.18,-.72);
+      sweep.lineTo(side*1.55*scale,-.13);
+      sweep.lineTo(side*1.36*scale,.2);
+      sweep.lineTo(side*.48,.57);
+      sweep.lineTo(side*.27,.34);
+      sweep.closePath();
+      const plate=add(new THREE.ExtrudeGeometry(sweep,{depth:.075,bevelEnabled:true,bevelSegments:1,bevelSize:.025,bevelThickness:.018}),armor,[0,.015,0]);
+      plate.rotation.x=-Math.PI/2;
+      const leadingEdge=add(new THREE.BoxGeometry(.07,.028,.66),trim,[side*.91*scale,.11,-.12]);
+      leadingEdge.rotation.y=side*.44;
+    }
+  }
+  if(spec.shape==='heavy'||spec.shape==='tank'){
+    for(const side of [-1,1]){
+      const shoulder=add(new THREE.BoxGeometry(.74,.12,.76),armor,[side*.71,.13,-.02]);shoulder.rotation.y=side*.18;
+      add(new THREE.BoxGeometry(.46,.025,.055),trim,[side*.73,.2,-.19]);
+    }
+    const noseGuard=add(new THREE.BoxGeometry(.74,.12,.16),trim,[0,-.04,-.91]);
+  }
+  add(new THREE.TorusGeometry(.34,.027,6,32),trim,[0,.296,.23]);
+  const rearPlate=add(new THREE.BoxGeometry(.44,.08,.48),black,[0,.12,.43]);
+  for(const side of [-1,1]){
+    const thruster=add(new THREE.CylinderGeometry(.12,.17,.25,12),dark,[side*.43,-.08,.57]);thruster.rotation.x=Math.PI/2;
+    const thrusterLip=add(new THREE.TorusGeometry(.14,.025,6,16),trim,[side*.43,-.08,.69]);
+    thrusterLip.rotation.y=Math.PI/2;
+  }
+  
   const cockpit=add(new THREE.SphereGeometry(.25,18,12),glass,[0,.17,-.28],[1,.62,.7]);
   add(new THREE.TorusGeometry(.26,.035,7,28),trim,[0,.17,-.29]);
   add(new THREE.BoxGeometry(.12,.06,.2),black,[0,.23,-.42]);
@@ -74,8 +115,14 @@ export function createDrone(kind=0,team='red'){
   if(spec.shape==='wing'){for(let side of [-1,1]){let wing=add(new THREE.ConeGeometry(.58,1.2,4),armor,[side*.76,0,-.06]);wing.rotation.z=side*Math.PI/2;wing.rotation.y=side*.08;add(new THREE.BoxGeometry(.1,.08,.85),trim,[side*.94,.07,.02])}}
   if(spec.shape==='ring'){let ring=add(new THREE.TorusGeometry(1.6,.095,10,40),trim,[0,0,0]);ring.userData.orbit=true;ring.rotation.x=.16;for(let i=0;i<4;i++){let a=i*Math.PI/2;let brace=add(new THREE.BoxGeometry(1.4,.07,.07),armor,[Math.cos(a)*.7,0,Math.sin(a)*.7]);brace.rotation.y=-a}}
   if(spec.shape==='quad'){for(let i=0;i<4;i++){let a=Math.PI*.25+i*Math.PI/2;const blade=add(new THREE.BoxGeometry(.17,.1,1.55),armor,[Math.cos(a)*.8,0,Math.sin(a)*.8]);blade.rotation.y=-a}}
-  // Two articulated cannons with heated muzzle collars.
-  for(let side of [-1,1]){const barrel=add(new THREE.CylinderGeometry(.045,.085,.5,12),dark,[side*.2,-.11,-.59]);barrel.rotation.x=Math.PI/2;const collar=add(new THREE.CylinderGeometry(.09,.09,.11,12),trim,[side*.2,-.11,-.85]);collar.rotation.x=Math.PI/2;const lens=add(new THREE.SphereGeometry(.06,10,8),new THREE.MeshBasicMaterial({color:glowColor}),[side*.2,-.11,-.92]);weaponMuzzles.push(lens)}
+  // Twin forward cannons are now visibly mounted past the nose armor so their
+  // muzzle flash originates at the barrels rather than from the camera center.
+  for(let side of [-1,1]){
+    const barrel=add(new THREE.CylinderGeometry(.055,.09,.58,12),dark,[side*.35,-.095,-.83]);barrel.rotation.x=Math.PI/2;
+    const barrelBand=add(new THREE.TorusGeometry(.076,.018,6,14),trim,[side*.35,-.095,-.99]);barrelBand.rotation.y=Math.PI/2;
+    const collar=add(new THREE.CylinderGeometry(.105,.105,.13,12),trim,[side*.35,-.095,-1.105]);collar.rotation.x=Math.PI/2;
+    const lens=add(new THREE.SphereGeometry(.066,12,10),new THREE.MeshBasicMaterial({color:glowColor,toneMapped:false}),[side*.35,-.095,-1.19]);weaponMuzzles.push(lens);
+  }
   // Sensor gimbal.
   const neck=add(new THREE.CylinderGeometry(.08,.11,.21,10),black,[0,-.25,-.29]);neck.rotation.x=.3;const gimbal=add(new THREE.Group(),dark,[0,-.36,-.36]);addMesh(gimbal,new THREE.SphereGeometry(.22,16,12),glass,[0,0,0],[1,1,.9]);for(let side of [-1,1])addMesh(gimbal,new THREE.BoxGeometry(.16,.09,.36),trim,[side*.25,0,0]);
   const engine= new THREE.PointLight(glowColor,2.1,5);engine.position.set(0,-.1,.67);group.add(engine);
