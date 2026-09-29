@@ -3,19 +3,29 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<meta name="theme-color" content="#080d10">
-<title>SKYFALL // Drone Combat · Build 03</title>
+<meta name="theme-color" content="#080d16">
+<title>AFTERBURN // Aerial Combat · Rebuild 04</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=skyfall-build-03">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=afterburn-04">
 </head>
 <body>
-<canvas id="world"></canvas><div class="vignette"></div><div class="scanlines"></div>
-<header class="topbar"><div class="logo">SKYFALL<span> / </span>DRONE COMBAT<small>NORTHSTAR DEFENSE NETWORK // 3D FLIGHT BUILD 03</small></div><div class="telemetry"><div><small>OPERATION</small><b id="opLabel">01 / 03</b></div><div><small>SECTOR</small><b id="sectorLabel">KARST-9</b></div></div></header>
-<section id="hud" class="hidden"><div class="mission"><small id="missionCode">OP-01 / INSERTION</small><b id="missionName">GHOST SIGNAL</b></div><div class="objective"><small>FLIGHT DIRECTIVE</small><b id="objectiveText">HOSTILES 0 / 3</b></div><div class="crosshair"><i></i></div><div class="bottomHud"><div class="meter"><small>HULL INTEGRITY</small><b><span id="hp">100</span><em>%</em></b><div class="bar"><i id="hpBar"></i></div></div><div class="flightRead"><small>ALTITUDE</small><b id="altitude">045</b><small class="unit">M</small></div><div class="meter right"><small>HOSTILES</small><b id="hostileCount">03</b></div></div><div class="weapon"><small>WEAPON SYSTEM <span>Q TO CYCLE</span></small><b id="weaponName">VULCAN / 20MM</b><small id="ammo">∞  AUTONOMOUS FEED</small></div><div id="toast" class="toast"></div><div id="damage" class="damage"></div></section>
-<button id="viewButton" class="pause hidden" style="right:120px">VIEW: FPS &nbsp; [V]</button><button id="pauseButton" class="pause hidden">Ⅱ &nbsp; PAUSE</button>
-<div id="menu" class="screen"><div class="panel"><div class="eyebrow">NORTHSTAR DEFENSE NETWORK // CLASSIFIED</div><h1>SKY<span>FALL</span></h1><p class="intro">The exclusion zone is dark. Take manual control of the last combat drone, clear hostile airspace, and reach extraction.</p><div id="missions" class="missions"></div><div class="startrow"><button id="startButton" class="primary">LAUNCH DRONE <span>→</span></button><p class="controls"><b>WASD</b> FLY &nbsp; <b>MOUSE</b> AIM<br><b>SPACE / CTRL</b> ALTITUDE &nbsp; <b>SHIFT</b> BOOST<br><b>CLICK</b> FIRE &nbsp; <b>Q</b> WEAPON &nbsp; <b>V</b> CAMERA</p></div><p class="note">BEST WITH HEADPHONES · DESKTOP FLIGHT CONTROLS</p></div></div>
-<div id="result" class="screen hidden"><div class="panel resultPanel"><div class="eyebrow" id="resultEyebrow">OPERATION COMPLETE</div><h2 id="resultTitle">SECTOR<br>SECURED</h2><p id="resultCopy"></p><div class="stats"><div><b id="resultKills">0 / 3</b><small>TARGETS DOWN</small></div><div><b id="resultTime">00:00</b><small>FLIGHT TIME</small></div><div><b id="resultHull">100%</b><small>HULL REMAINING</small></div></div><div class="buttons"><button id="continueButton" class="primary">NEXT OPERATION →</button><button id="campaignButton" class="secondary">CAMPAIGN</button></div></div></div>
-<div id="pauseScreen" class="screen hidden"><div class="panel resultPanel"><div class="eyebrow">FLIGHT SYSTEMS // HOLD</div><h2>DRONE<br>PAUSED</h2><p>Combat telemetry suspended. Your drone is holding position.</p><div class="buttons"><button id="resumeButton" class="primary">RESUME FLIGHT →</button><button id="abortButton" class="secondary">ABORT TO CAMPAIGN</button></div></div></div>
-<script type="module" src="game.js?v=skyfall-build-03"></script>
+<canvas id="world" aria-label="3D drone combat arena"></canvas>
+<div class="atmosphere"></div><div class="grain"></div><div id="speedFX" class="speedFX"></div><div id="damageFX" class="damageFX"></div>
+<header class="masthead"><a class="wordmark" href="#" aria-label="Afterburn home">AFTER<span>BURN</span><i>FLIGHT COMBAT // 04</i></a><div class="match-info"><span>NEON DISTRICT <i>·</i> ARENA 01</span><b id="matchClock">00:00</b></div></header>
+<section id="hud" class="hud hidden" aria-live="polite">
+ <div class="leftStat"><span class="micro">HULL SYSTEMS</span><div class="barline"><i id="healthBar"></i></div><strong id="healthValue">100</strong><small>ARMOR</small><div class="boostTrack"><i id="boostBar"></i></div><span class="boostLabel">THRUST CHARGE <b id="boostValue">100</b></span></div>
+ <div class="scoreboard"><div class="scoreHead"><span>LIVE COMBAT</span><b>FIRST TO 10</b></div><div id="scoreRows" class="scoreRows"></div></div>
+ <div class="rightStat"><span class="micro">ENERGY WEAPON</span><strong id="weaponLabel">ARC-9</strong><div class="ammo">  <b id="ammoValue">24</b><span>/ 24</span></div><div class="reloadTrack"><i id="reloadBar"></i></div><small id="weaponHint">LMB FIRE · R RELOAD</small></div>
+ <div id="reticle" class="reticle"><i></i><b></b><em></em><span></span></div>
+ <div id="hitConfirm" class="hitConfirm">×</div><div id="toast" class="toast"></div>
+ <div class="bottomCenter"><span>WASD <i>FLIGHT</i></span><span>SPACE / CTRL <i>ALTITUDE</i></span><span>SHIFT <i>BOOST</i></span><span>RMB <i>FOCUS</i></span><span>V <i>CAMERA</i></span><span>ESC <i>PAUSE</i></span></div>
+</section>
+<div id="killFeed" class="killFeed"></div><button id="cameraToggle" class="cameraToggle hidden">CAMERA <b>FPV</b> <kbd>V</kbd></button><button id="pauseButton" class="pauseButton hidden" aria-label="Pause">Ⅱ</button>
+<div id="menu" class="overlay"><div class="menuCard"><div class="kicker"><i></i> PRIVATE TEST RANGE / BUILD 04</div><h1>OWN THE<br><span>SKYLINE.</span></h1><p class="lede">Aerial combat. No fixed lanes, no safe angles. Outfly the squadron and take the district.</p><div class="menuStats"><div><b>06</b><small>COMBAT DRONES</small></div><div><b>01</b><small>VERTICAL ARENA</small></div><div><b>10</b><small>ELIMS TO WIN</small></div></div><button id="playButton" class="launchButton"><span>ENTER THE ARENA</span><b>↗</b></button><div class="controlsGrid"><div><kbd>W A S D</kbd><span>FLY</span></div><div><kbd>SPACE / CTRL</kbd><span>ASCEND / DESCEND</span></div><div><kbd>SHIFT</kbd><span>AFTERBURNER</span></div><div><kbd>MOUSE</kbd><span>FULL-AXIS LOOK</span></div><div><kbd>LMB</kbd><span>FIRE / HOLD TO BURST</span></div><div><kbd>RMB</kbd><span>FOCUS AIM</span></div></div><div class="menuFoot"><span>NO LOADOUT. NO EXCUSES.</span><span>WEBGL // LIVE</span></div></div></div>
+<div id="countdown" class="countdown hidden"><span>ENGAGE IN</span><b id="countdownNumber">3</b></div>
+<div id="pauseOverlay" class="overlay hidden"><div class="smallCard"><div class="kicker">FLIGHT SYSTEM / HOLD</div><h2>TAKE A<br><span>BREATHER.</span></h2><p>Match paused. Your spot in the arena is waiting.</p><button id="resumeButton" class="launchButton"><span>RESUME MATCH</span><b>↗</b></button><button id="quitButton" class="textButton">EXIT TO HANGAR</button></div></div>
+<div id="endOverlay" class="overlay hidden"><div class="smallCard"><div class="kicker" id="endKicker">MATCH COMPLETE</div><h2 id="endTitle">AIRSPACE<br><span>DOMINATED.</span></h2><p id="endCopy">Score one for the flight log.</p><div id="finalScore" class="finalScore"></div><button id="againButton" class="launchButton"><span>REDEPLOY</span><b>↗</b></button></div></div>
+<script type="module" src="game.js?v=afterburn-04"></script>
 </body></html>
