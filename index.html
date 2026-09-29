@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#080d10">
+<title>SKYFALL // Drone Combat</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<canvas id="world"></canvas><div class="vignette"></div><div class="scanlines"></div>
+<header class="topbar"><div class="logo">SKYFALL<span> / </span>DRONE COMBAT<small>NORTHSTAR DEFENSE NETWORK // AUTONOMOUS SYSTEMS</small></div><div class="telemetry"><div><small>OPERATION</small><b id="opLabel">01 / 03</b></div><div><small>SECTOR</small><b id="sectorLabel">KARST-9</b></div></div></header>
+<section id="hud" class="hidden"><div class="mission"><small id="missionCode">OP-01 / INSERTION</small><b id="missionName">GHOST SIGNAL</b></div><div class="objective"><small>FLIGHT DIRECTIVE</small><b id="objectiveText">HOSTILES 0 / 3</b></div><div class="crosshair"><i></i></div><div class="bottomHud"><div class="meter"><small>HULL INTEGRITY</small><b><span id="hp">100</span><em>%</em></b><div class="bar"><i id="hpBar"></i></div></div><div class="flightRead"><small>ALTITUDE</small><b id="altitude">045</b><small class="unit">M</small></div><div class="meter right"><small>HOSTILES</small><b id="hostileCount">03</b></div></div><div class="weapon"><small>WEAPON SYSTEM <span>Q TO CYCLE</span></small><b id="weaponName">VULCAN / 20MM</b><small id="ammo">∞  AUTONOMOUS FEED</small></div><div id="toast" class="toast"></div><div id="damage" class="damage"></div></section>
+<button id="pauseButton" class="pause hidden">Ⅱ &nbsp; PAUSE</button>
+<div id="menu" class="screen"><div class="panel"><div class="eyebrow">NORTHSTAR DEFENSE NETWORK // CLASSIFIED</div><h1>SKY<span>FALL</span></h1><p class="intro">The exclusion zone is dark. Take manual control of the last combat drone, clear hostile airspace, and reach extraction.</p><div id="missions" class="missions"></div><div class="startrow"><button id="startButton" class="primary">LAUNCH DRONE <span>→</span></button><p class="controls"><b>WASD</b> FLY &nbsp; <b>MOUSE</b> AIM<br><b>SPACE / CTRL</b> ALTITUDE &nbsp; <b>SHIFT</b> BOOST<br><b>CLICK</b> FIRE &nbsp; <b>Q</b> SWITCH WEAPON</p></div><p class="note">BEST WITH HEADPHONES · DESKTOP FLIGHT CONTROLS</p></div></div>
+<div id="result" class="screen hidden"><div class="panel resultPanel"><div class="eyebrow" id="resultEyebrow">OPERATION COMPLETE</div><h2 id="resultTitle">SECTOR<br>SECURED</h2><p id="resultCopy"></p><div class="stats"><div><b id="resultKills">0 / 3</b><small>TARGETS DOWN</small></div><div><b id="resultTime">00:00</b><small>FLIGHT TIME</small></div><div><b id="resultHull">100%</b><small>HULL REMAINING</small></div></div><div class="buttons"><button id="continueButton" class="primary">NEXT OPERATION →</button><button id="campaignButton" class="secondary">CAMPAIGN</button></div></div></div>
+<div id="pauseScreen" class="screen hidden"><div class="panel resultPanel"><div class="eyebrow">FLIGHT SYSTEMS // HOLD</div><h2>DRONE<br>PAUSED</h2><p>Combat telemetry suspended. Your drone is holding position.</p><div class="buttons"><button id="resumeButton" class="primary">RESUME FLIGHT →</button><button id="abortButton" class="secondary">ABORT TO CAMPAIGN</button></div></div></div>
+<script type="module" src="game.js"></script>
+</body></html>
